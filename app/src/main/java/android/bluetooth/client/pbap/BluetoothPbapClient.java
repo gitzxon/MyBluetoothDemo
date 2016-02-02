@@ -405,7 +405,6 @@ public class BluetoothPbapClient {
 
             switch (msg.what) {
                 case BluetoothPbapSession.REQUEST_FAILED: {
-                    LogUtil.d("BluetoothPbapSession.REQUEST_FAILED");
                     BluetoothPbapRequest req = (BluetoothPbapRequest) msg.obj;
 
                     if (req instanceof BluetoothPbapRequestPullPhoneBookSize) {
@@ -426,7 +425,6 @@ public class BluetoothPbapClient {
                 }
 
                 case BluetoothPbapSession.REQUEST_COMPLETED: {
-                    LogUtil.d("BluetoothPbapSession.REQUEST_COMPLETED");
 
                     BluetoothPbapRequest req = (BluetoothPbapRequest) msg.obj;
 
@@ -460,13 +458,10 @@ public class BluetoothPbapClient {
                 }
 
                 case BluetoothPbapSession.AUTH_REQUESTED:
-                    LogUtil.d("BluetoothPbapSession.AUTH_REQUESTED");
-
                     client.sendToClient(EVENT_SESSION_AUTH_REQUESTED);
                     break;
 
                 case BluetoothPbapSession.AUTH_TIMEOUT:
-                    LogUtil.d("BluetoothPbapSession.AUTH_TIMEOUT");
 
                     client.sendToClient(EVENT_SESSION_AUTH_TIMEOUT);
                     break;
@@ -479,21 +474,15 @@ public class BluetoothPbapClient {
                  */
 
                 case BluetoothPbapSession.SESSION_CONNECTING:
-                    LogUtil.d("BluetoothPbapSession.SESSION_CONNECTING");
-
                     client.mConnectionState = ConnectionState.CONNECTING;
                     break;
 
                 case BluetoothPbapSession.SESSION_CONNECTED:
-                    Log.d(TAG, "from debug_ang : BluetoothPbapSession.SESSION_CONNECTED");
-
                     client.mConnectionState = ConnectionState.CONNECTED;
                     client.sendToClient(EVENT_SESSION_CONNECTED);
                     break;
 
                 case BluetoothPbapSession.SESSION_DISCONNECTED:
-                    LogUtil.d("BluetoothPbapSession.SESSION_DISCONNECTED");
-
                     client.mConnectionState = ConnectionState.DISCONNECTED;
                     client.sendToClient(EVENT_SESSION_DISCONNECTED);
                     break;
