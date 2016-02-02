@@ -3,17 +3,22 @@ package com.zxon.mybluetoothdemo.service;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
+import android.bluetooth.BluetoothUuid;
 import android.bluetooth.client.pbap.BluetoothPbapClient;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.support.annotation.Nullable;
 
 import com.zxon.mybluetoothdemo.util.LogUtil;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Created by leon on 16/2/1.
@@ -96,17 +101,17 @@ public class BluetoothService extends Service {
         super.onDestroy();
     }
 
-    public void connect(String address) {
-        // Get the BluetoothDevice object
-        BluetoothAdapter adapter = getsBluetoothAdapter();
-        BluetoothDevice device = adapter.getRemoteDevice(address);
-        if (sPbapClient == null) {
-            sPbapClient = new BluetoothPbapClient(device, sHandler);
-            sPbapClient.connect();
-            LogUtil.d("after sPbapClient.connect()");
-        }
-
-    }
+//    public void connect(String address) {
+//        // Get the BluetoothDevice object
+//        BluetoothAdapter adapter = getsBluetoothAdapter();
+//        BluetoothDevice device = adapter.getRemoteDevice(address);
+//        if (sPbapClient == null) {
+//            sPbapClient = new BluetoothPbapClient(device, sHandler);
+//            sPbapClient.connect();
+//            LogUtil.d("after sPbapClient.connect()");
+//        }
+//
+//    }
 
     public void getPhoneBook() {
         if (sPbapClient != null && sPbapClient.getState() == BluetoothPbapClient.ConnectionState.CONNECTED) {
@@ -120,6 +125,38 @@ public class BluetoothService extends Service {
             LogUtil.d("-----------------------------");
 
         }
+    }
+
+    public void establishPbap(String address) {
+        // Get the BluetoothDevice object
+        BluetoothAdapter adapter = getsBluetoothAdapter();
+        BluetoothDevice device = adapter.getRemoteDevice(address);
+        if (sPbapClient == null) {
+            sPbapClient = new BluetoothPbapClient(device, sHandler);
+            sPbapClient.connect();
+            LogUtil.d("after sPbapClient.connect()");
+        }
+    }
+
+    public void establishSocket(String address) {
+        BluetoothAdapter adapter = getsBluetoothAdapter();
+        BluetoothDevice device = adapter.getRemoteDevice(address);
+//        LogUtil.d("-------------");
+//        for (ParcelUuid uuid : device.getUuids()) {
+//            LogUtil.d("uuid is : " + uuid);
+//        }
+//        LogUtil.d("-------------");
+        ParcelUuid uuid = BluetoothUuid.Handsfree;
+        try {
+            LogUtil.d("try to createRfcommSocketToServiceRecord");
+            BluetoothSocket socket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
+            socket.connect();
+            socket.close();
+        } catch (IOException e) {
+            LogUtil.d("createRfcommSocketToServiceRecord failed");
+            e.printStackTrace();
+        }
+
     }
 
     public class BluetoothServiceBinder extends Binder {

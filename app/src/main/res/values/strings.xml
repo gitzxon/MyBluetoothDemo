@@ -10,4 +10,7 @@
     <string name="button_scan">scan</string>
     <string name="btn_pull_phone_book">pull phone book</string>
     <string name="no_device_chosen">no device chosen</string>
+    <string name="establish_socket">establish_socket</string>
+    <string name="place_call">place  a  call</string>
+    <string name="establish_pbap_client">establish pabp client</string>
 </resources>

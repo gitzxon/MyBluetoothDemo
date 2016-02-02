@@ -12,6 +12,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -37,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     public static BluetoothPbapClient sClient;
 
     public static BluetoothService sService;
+
+    public static String sDeviceAddress = "";
 
     @Bind(R.id.bluetooth_device_chosen)
     public TextView mDeviceChosen;
@@ -139,7 +142,8 @@ public class MainActivity extends AppCompatActivity {
                         mDeviceChosen.setText(info);
                         String address = data.getExtras().getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
                         LogUtil.d("address is : " + address);
-                        sService.connect(address);
+                        sDeviceAddress = address;
+//                        sService.connect(address);
                     }
 
                 }
@@ -173,18 +177,35 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @OnClick(R.id.choose_device)
+    @OnClick(R.id.btn_choose_device)
     public void onChooseDevice() {
         Intent chooseDevice = new Intent(this, DeviceListActivity.class);
         startActivityForResult(chooseDevice, CHOOSE_DEVICE);
     }
 
-    @OnClick(R.id.pull_phone_book)
+    @OnClick(R.id.btn_pull_phone_book)
     public void onPullPhoneBook() {
         if (sService != null) {
             sService.getPhoneBook();
         }
     }
+
+    @OnClick(R.id.btn_place_call)
+    public void onPlaceCall() {
+
+    }
+
+
+    @OnClick(R.id.btn_establish_pbap)
+    public void onEstablishPbap() {
+        sService.establishPbap(sDeviceAddress);
+    }
+
+    @OnClick(R.id.btn_establish_socket)
+    public void onEstablishSocket() {
+        sService.establishSocket(sDeviceAddress);
+    }
+
 
     /**
      * Establish connection with other divice
