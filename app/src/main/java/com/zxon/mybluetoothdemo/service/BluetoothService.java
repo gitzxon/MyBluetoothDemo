@@ -26,7 +26,6 @@ public class BluetoothService extends Service {
     public static final int STATE_CONNECTED = 4;
 
 
-
     public static BluetoothPbapClient sPbapClient;
     private static BluetoothAdapter sBluetoothAdapter;
     public static List<BluetoothDevice> sDevicesAvailable;
@@ -111,11 +110,15 @@ public class BluetoothService extends Service {
 
     public void getPhoneBook() {
         if (sPbapClient != null && sPbapClient.getState() == BluetoothPbapClient.ConnectionState.CONNECTED) {
+            LogUtil.d("pulling the PhoneBook, it may take a long time ! ");
             sPbapClient.pullPhoneBook(BluetoothPbapClient.PB_PATH);
         } else {
+            LogUtil.d("-----------------------------");
             LogUtil.d("sPbapClient is not ready ! ");
             LogUtil.d(sPbapClient);
             LogUtil.d(sPbapClient.getState());
+            LogUtil.d("-----------------------------");
+
         }
     }
 
@@ -134,6 +137,14 @@ public class BluetoothService extends Service {
                 case BluetoothPbapClient.EVENT_PULL_PHONE_BOOK_DONE: {
                     LogUtil.d("EVENT_PULL_PHONE_BOOK_DONE");
                     sPbapClient.disconnect();
+                }
+                break;
+                case BluetoothPbapClient.EVENT_SESSION_CONNECTED: {
+                    LogUtil.d("EVENT_SESSION_CONNECTED");
+                }
+                break;
+                case BluetoothPbapClient.EVENT_SESSION_DISCONNECTED: {
+                    LogUtil.d("EVENT_SESSION_DISCONNECTED");
                 }
                 break;
                 default: {
