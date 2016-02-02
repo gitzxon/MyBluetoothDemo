@@ -204,18 +204,30 @@ public class BluetoothService extends Service {
 
             sBluetoothSocket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
 
-            try {
-                sBluetoothSocket.connect();
-            } catch (IOException e) {
-                LogUtil.d("sBLuetoothSocket.connect() is failed -------from teh IOException");
+            int connectTimes = 0;
+            int maxConnectTimes = 10;
+            boolean isConnected = false;
+            while (!isConnected && connectTimes < maxConnectTimes) {
                 try {
-                    sBluetoothSocket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
+                    sBluetoothSocket.connect();
+
+                } catch (IOException e) {
+                    LogUtil.d("sBLuetoothSocket.connect() is failed -------from the IOException");
+                    try {
+                        sBluetoothSocket.close();
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+                    e.printStackTrace();
                 }
-                e.printStackTrace();
+                LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
+
+                if (sBluetoothSocket.isConnected()) {
+                    isConnected = true;
+                }
+                connectTimes = connectTimes + 1;
             }
-            LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
+
 
         } catch (IOException e) {
             LogUtil.d("createRfcommSocketToServiceRecord failed");
