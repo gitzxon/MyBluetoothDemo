@@ -32,6 +32,7 @@ public class BluetoothService extends Service {
     public static final int STATE_NONE = 2;
     public static final int STATE_CONNECTING = 3;
     public static final int STATE_CONNECTED = 4;
+    private static final UUID MY_UUID_SECURE = UUID.fromString("0000111E-0000-1000-8000-00805F9B34FB");
 
 
     public static BluetoothPbapClient sPbapClient;
@@ -141,39 +142,81 @@ public class BluetoothService extends Service {
         }
     }
 
+
+    public void showAllAvailableUuids(BluetoothDevice device) {
+        LogUtil.d("-------------");
+
+        ParcelUuid[] uuids = device.getUuids();
+        if (uuids == null || uuids.length == 0) {
+            LogUtil.d("get uuids failed");
+        } else {
+            for (ParcelUuid uuid : uuids) {
+                LogUtil.d("uuid is : " + uuid);
+            }
+            LogUtil.d("-------------");
+        }
+    }
+
+    public void showBondedState(BluetoothDevice device){
+        // bond state
+        switch (device.getBondState()) {
+            case BluetoothDevice.BOND_BONDED: {
+                LogUtil.d("BONDED");
+            }
+            break;
+            case BluetoothDevice.BOND_NONE: {
+                LogUtil.d("NONE");
+            }
+            break;
+            case BluetoothDevice.BOND_BONDING: {
+                LogUtil.d("BONDING");
+            }
+            break;
+            default: {
+            }
+        }
+    }
+
+    public void showDiscoveryState(){
+        if (sBluetoothAdapter.isDiscovering()) {
+            LogUtil.d("@@@ it is discovering @@@ ");
+            sBluetoothAdapter.cancelDiscovery();
+        } else {
+            LogUtil.d("@@@ it is not discovering @@@");
+        }
+    }
+
     public void establishSocket(String address) {
         BluetoothAdapter adapter = getsBluetoothAdapter();
         BluetoothDevice device = adapter.getRemoteDevice(address);
-        LogUtil.d("-------------");
-        ParcelUuid[] uuids = device.getUuids();
-        for (ParcelUuid uuid : uuids) {
-            LogUtil.d("uuid is : " + uuid);
-        }
-        LogUtil.d("-------------");
-        ParcelUuid uuid =  BluetoothUuid.Handsfree;
+
+
+        ParcelUuid uuid = BluetoothUuid.Handsfree;
+
+        showAllAvailableUuids(device);
+        showBondedState(device);
+        showDiscoveryState();
 
         try {
             LogUtil.d("try to createRfcommSocketToServiceRecord");
-
-            if (sBluetoothAdapter.isDiscovering()) {
-                LogUtil.d("@@@ it is discovering @@@ ");
-                sBluetoothAdapter.cancelDiscovery();
-            } else {
-                LogUtil.d("@@@ it is not discovering @@@");
-            }
             sBluetoothAdapter.cancelDiscovery();
 
-            sBluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
-            while (sBluetoothAdapter.isDiscovering()) {
-                LogUtil.d("----------------- it is still discovering  --------------");
+
+            sBluetoothSocket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
+
+            try {
+                sBluetoothSocket.connect();
+            } catch (IOException e) {
+                LogUtil.d("sBLuetoothSocket.connect() is failed -------from teh IOException");
+                try {
+                    sBluetoothSocket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                e.printStackTrace();
             }
-            sBluetoothSocket.connect();
             LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
 
-            if (!sBluetoothSocket.isConnected()) {
-                sBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(uuid.getUuid());
-                LogUtil.d("state of insecure sBluetoothSocket : " + sBluetoothSocket.isConnected());
-            }
         } catch (IOException e) {
             LogUtil.d("createRfcommSocketToServiceRecord failed");
             e.printStackTrace();
@@ -259,4 +302,6 @@ public class BluetoothService extends Service {
             }
         }
     }
+
+
 }
