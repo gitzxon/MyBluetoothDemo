@@ -124,7 +124,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
-        sClient.disconnect();
+        if (sClient != null && sClient.getState() == BluetoothPbapClient.ConnectionState.CONNECTED) {
+            sClient.disconnect();
+        }
         super.onDestroy();
     }
 
@@ -192,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.btn_place_call)
     public void onPlaceCall() {
-
+        sService.placeCall();
     }
 
 

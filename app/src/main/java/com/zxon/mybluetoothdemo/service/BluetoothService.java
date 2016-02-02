@@ -3,9 +3,12 @@ package com.zxon.mybluetoothdemo.service;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSocket;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.client.pbap.BluetoothPbapClient;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.Handler;
@@ -35,6 +38,8 @@ public class BluetoothService extends Service {
     private static BluetoothAdapter sBluetoothAdapter;
     public static List<BluetoothDevice> sDevicesAvailable;
     public static BluetoothServiceHandler sHandler = new BluetoothServiceHandler();
+    public static BluetoothSocket sBluetoothSocket;
+    public static Context sContext;
 
     private int mState = 0;
 
@@ -46,6 +51,8 @@ public class BluetoothService extends Service {
         if (sBluetoothAdapter == null) {
             sBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         }
+
+        sContext = this;
     }
 
     @Nullable
@@ -98,20 +105,16 @@ public class BluetoothService extends Service {
 
     @Override
     public void onDestroy() {
+        if (sBluetoothSocket != null && sBluetoothSocket.isConnected()) {
+            try {
+                sBluetoothSocket.close();
+            } catch (IOException e) {
+                LogUtil.d("in onDestroy, sBluetoothSocket.close failed !");
+                e.printStackTrace();
+            }
+        }
         super.onDestroy();
     }
-
-//    public void connect(String address) {
-//        // Get the BluetoothDevice object
-//        BluetoothAdapter adapter = getsBluetoothAdapter();
-//        BluetoothDevice device = adapter.getRemoteDevice(address);
-//        if (sPbapClient == null) {
-//            sPbapClient = new BluetoothPbapClient(device, sHandler);
-//            sPbapClient.connect();
-//            LogUtil.d("after sPbapClient.connect()");
-//        }
-//
-//    }
 
     public void getPhoneBook() {
         if (sPbapClient != null && sPbapClient.getState() == BluetoothPbapClient.ConnectionState.CONNECTED) {
@@ -141,22 +144,89 @@ public class BluetoothService extends Service {
     public void establishSocket(String address) {
         BluetoothAdapter adapter = getsBluetoothAdapter();
         BluetoothDevice device = adapter.getRemoteDevice(address);
-//        LogUtil.d("-------------");
-//        for (ParcelUuid uuid : device.getUuids()) {
-//            LogUtil.d("uuid is : " + uuid);
-//        }
-//        LogUtil.d("-------------");
-        ParcelUuid uuid = BluetoothUuid.Handsfree;
+        LogUtil.d("-------------");
+        ParcelUuid[] uuids = device.getUuids();
+        for (ParcelUuid uuid : uuids) {
+            LogUtil.d("uuid is : " + uuid);
+        }
+        LogUtil.d("-------------");
+        ParcelUuid uuid =  BluetoothUuid.Handsfree;
+
         try {
             LogUtil.d("try to createRfcommSocketToServiceRecord");
-            BluetoothSocket socket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
-            socket.connect();
-            socket.close();
+
+            if (sBluetoothAdapter.isDiscovering()) {
+                LogUtil.d("@@@ it is discovering @@@ ");
+                sBluetoothAdapter.cancelDiscovery();
+            } else {
+                LogUtil.d("@@@ it is not discovering @@@");
+            }
+            sBluetoothAdapter.cancelDiscovery();
+
+            sBluetoothSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
+            while (sBluetoothAdapter.isDiscovering()) {
+                LogUtil.d("----------------- it is still discovering  --------------");
+            }
+            sBluetoothSocket.connect();
+            LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
+
+            if (!sBluetoothSocket.isConnected()) {
+                sBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(uuid.getUuid());
+                LogUtil.d("state of insecure sBluetoothSocket : " + sBluetoothSocket.isConnected());
+            }
         } catch (IOException e) {
             LogUtil.d("createRfcommSocketToServiceRecord failed");
             e.printStackTrace();
         }
 
+    }
+
+    public void placeCall() {
+        getHeadsetClient();
+    }
+
+    public void getHeadsetClient() {
+        BluetoothProfile.ServiceListener listener = new BluetoothProfile.ServiceListener() {
+            @Override
+            public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                LogUtil.d("BluetoothProfile.ServiceListener onServiceConnected");
+                if (profile == BluetoothProfile.HEADSET) {
+                    if (proxy == null) {
+                        LogUtil.d("the proxy is null ! ");
+                        return;
+                    } else {
+                        LogUtil.d("the proxy is not null ! ");
+                    }
+
+                    BluetoothHeadset headset = (BluetoothHeadset) proxy;
+
+                    List<BluetoothDevice> connectedList = headset.getConnectedDevices();
+                    if (connectedList.size() == 0) {
+                        LogUtil.d("the connectedList is of size 0 ! ");
+                        return;
+                    }
+
+                    BluetoothDevice device = connectedList.get(0);
+
+                    boolean isAudioConnected = headset.isAudioConnected(device);
+                    LogUtil.d("isAudioConnected : " + isAudioConnected);
+
+                    boolean isVoiceRecognitionEnable = headset.startVoiceRecognition(device);
+                    LogUtil.d("isVoiceRecognitionEnable : " + isVoiceRecognitionEnable);
+                }
+            }
+
+            @Override
+            public void onServiceDisconnected(int profile) {
+                LogUtil.d("onServiceDisconnected");
+            }
+        };
+
+        if (sBluetoothAdapter.getProfileProxy(sContext, listener, BluetoothProfile.HEADSET)) {
+            LogUtil.d("Get the profile proxy object associated with the profile --- success ! ");
+        } else {
+            LogUtil.d("getProfileProxy failed ! ");
+        }
     }
 
     public class BluetoothServiceBinder extends Binder {
