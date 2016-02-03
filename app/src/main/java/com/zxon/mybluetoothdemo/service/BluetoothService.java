@@ -191,7 +191,7 @@ public class BluetoothService extends Service {
         BluetoothDevice device = adapter.getRemoteDevice(address);
 
 
-        ParcelUuid uuid = BluetoothUuid.PBAP_PSE;
+        ParcelUuid uuid = BluetoothUuid.Handsfree;
 
         showAllAvailableUuids(device);
         showBondedState(device);
@@ -200,16 +200,14 @@ public class BluetoothService extends Service {
         try {
             LogUtil.d("try to createRfcommSocketToServiceRecord");
             sBluetoothAdapter.cancelDiscovery();
-
-            sBluetoothSocket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
-
-            int connectTimes = 0;
-            int maxConnectTimes = 1;
-            boolean isConnected = false;
+//            sBluetoothSocket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
+            sBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(uuid.getUuid());
+            sBluetoothAdapter.cancelDiscovery();
             try {
                 sBluetoothSocket.connect();
 
             } catch (IOException e) {
+
                 LogUtil.d("sBLuetoothSocket.connect() is failed -------from the IOException");
                 try {
                     sBluetoothSocket.close();
@@ -260,6 +258,14 @@ public class BluetoothService extends Service {
 
                     boolean isVoiceRecognitionEnable = headset.startVoiceRecognition(device);
                     LogUtil.d("isVoiceRecognitionEnable : " + isVoiceRecognitionEnable);
+
+                    if (sBluetoothSocket.isConnected()) {
+                        try {
+                            sBluetoothSocket.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             }
 
