@@ -191,7 +191,7 @@ public class BluetoothService extends Service {
         BluetoothDevice device = adapter.getRemoteDevice(address);
 
 
-        ParcelUuid uuid = BluetoothUuid.Handsfree;
+        ParcelUuid uuid = BluetoothUuid.PBAP_PSE;
 
         showAllAvailableUuids(device);
         showBondedState(device);
@@ -201,32 +201,24 @@ public class BluetoothService extends Service {
             LogUtil.d("try to createRfcommSocketToServiceRecord");
             sBluetoothAdapter.cancelDiscovery();
 
-
             sBluetoothSocket = device.createRfcommSocketToServiceRecord(uuid.getUuid());
 
             int connectTimes = 0;
-            int maxConnectTimes = 10;
+            int maxConnectTimes = 1;
             boolean isConnected = false;
-            while (!isConnected && connectTimes < maxConnectTimes) {
+            try {
+                sBluetoothSocket.connect();
+
+            } catch (IOException e) {
+                LogUtil.d("sBLuetoothSocket.connect() is failed -------from the IOException");
                 try {
-                    sBluetoothSocket.connect();
-
-                } catch (IOException e) {
-                    LogUtil.d("sBLuetoothSocket.connect() is failed -------from the IOException");
-                    try {
-                        sBluetoothSocket.close();
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    }
-                    e.printStackTrace();
+                    sBluetoothSocket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
-                LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
-
-                if (sBluetoothSocket.isConnected()) {
-                    isConnected = true;
-                }
-                connectTimes = connectTimes + 1;
+                e.printStackTrace();
             }
+            LogUtil.d("state of sBluetoothSocket : " + sBluetoothSocket.isConnected());
 
 
         } catch (IOException e) {
